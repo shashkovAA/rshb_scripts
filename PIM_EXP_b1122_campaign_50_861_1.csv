@@ -1,0 +1,4 @@
+﻿regionalniy_filial,vsp,fio,product,data_operacii,abc_id,kod_filiala,priznak_migracii_filiala,phone_number1,data_vremya_viborki,answer_type,answer1,answer2,answer3,contact_attempt_time,last_completion_code
+Москва,111111,Бегун Дмитрий Михайлович,Кредит,12.07.2018,22222,33333,1,89258020306,13.07.2018,1,1,5,3,13.07.2018 16:07:04
+Область,66666,Шашков Андрей Александрович,Ипотека,10.07.2018,55555,66666,7,89261389514,09.07.2018,,,,,13.07.2018 16:07:04
+Область,774466,Петров Андрей Геннадьевич,Ипотека,10.07.2018,55555,66666,7,89261389514,09.07.2018,,,,,
