@@ -19,7 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 
-
 /**
  *
  * @author Shashkov Andrey
@@ -28,14 +27,16 @@ public class ConverterInCsv {
     //private static String fileExtension;
     private static String inputFileName,convertedFileName;
     private static long count = 0;
+    private static long worktime = 0;
     private static Properties property;
     private static String[] inputFieldsArray;
     private static String[] outputFieldsIndexArray;
     private static boolean  insertCustoms = false;
+    private static int numFieldsInConfigFile;
     public static void main(String[] args) throws IOException {
         
         System.out.println("Start script ConverterCsv...");
-              
+        worktime = System.currentTimeMillis();      
         if (args.length >= 1)
         	loadProperty(args[0]);
         	
@@ -79,7 +80,7 @@ public class ConverterInCsv {
         } 
 
         copytext(inputFileName, convertedFileName);
-        System.out.println("Processed " + count + " lines");
+        System.out.println("Processed " + count + " lines at " + (System.currentTimeMillis() - worktime) + " ms.");
     }
     
     private static void loadProperty(String filename) {
@@ -110,7 +111,7 @@ public class ConverterInCsv {
 
 	private static void renameOldConvertedFileAndCreateNewFileOne(File mFile) {
         
-		String fileExtension = inputFileName.substring(inputFileName.indexOf('.'));
+		String fileExtension = inputFileName.substring(inputFileName.lastIndexOf('.'));
 		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("dd_MM_yyyy-HH_mm");
 
@@ -137,6 +138,7 @@ public class ConverterInCsv {
     private static void copytext(String inputFileName, String convertFileName) {
         String readline;
         String idString = "";
+        String ouputString = "";
         boolean insertId = false;
         boolean deleteFirstLine = false;
         
@@ -151,7 +153,8 @@ public class ConverterInCsv {
         	
         String oFFD = property.getProperty("outputfile.fieldsdelimiter");
         outputFieldsIndexArray = property.getProperty("outputfile.fields.sequence").split(",");
-               
+        numFieldsInConfigFile = outputFieldsIndexArray.length;
+              
         String inputFileFieldsDelimiter = property.getProperty("inputfile.fieldsdelimiter");
         String headerString = property.getProperty("outputfile.headerstring.value");
         
@@ -168,25 +171,17 @@ public class ConverterInCsv {
                     count++;
                     if (insertId) 
                     	idString = String.valueOf(count) + oFFD;
-                    	
-                    if (!(deleteFirstLine && count == 1))
-                    bufferOut.write(idString + checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[0]))+ oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[1])) + oFFD + 
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[2])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[3])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[4])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[5])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[6])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[7])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[8])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[9])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[10])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[11])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[12])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[13])) + oFFD +
-                    		checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[14])) + 
-                    		System.getProperty("line.separator"));
+            
+                    ouputString = idString;
                     
+                    for (int i = 0; i < numFieldsInConfigFile - 1; i++)
+                    	ouputString+= checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[i]))+ oFFD;
+                    
+                    ouputString+= checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[numFieldsInConfigFile-1])) + 
+                    		System.getProperty("line.separator");
+                    
+                    if (!(deleteFirstLine && count == 1))
+                        bufferOut.write(ouputString);
             	}
         	}
         } catch (FileNotFoundException except) {
