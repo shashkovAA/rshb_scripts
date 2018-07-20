@@ -33,6 +33,8 @@ public class ConverterInCsv {
     private static String inputFileName,outputFileName;
     private static String readlineFromFile = "";
     private static long count = 0;
+    private static long traceCountRows1 = 0;
+    private static long traceCountRows2 = 0;
     private static long worktime = 0;
     private static Properties property;
     private static String[] inputFieldsArray;
@@ -48,7 +50,7 @@ public class ConverterInCsv {
     private static HashSet<Integer> duplicatedIdHashSet = new HashSet<Integer>();
     private static HashMap<Integer,String> map = new HashMap<Integer,String>();
     
-    private static final String TEMP_UNIQUE_ID_FILENAME = "tempUniqOut.csv";
+    private static String tempOUTputFilename;
     private static final String TEMP_NON_UNIQUE_ID_FILENAME = "tempDuplicateOut.csv";
     
     public static void main(String[] args) throws IOException {
@@ -80,29 +82,31 @@ public class ConverterInCsv {
         	System.out.println("Missing optional program attributes: <input_file_name>.");
         	System.out.println("This value will be used from the configuration file.");
         	
-        	if (!getProperty("inputfile.name").isEmpty()){
+        	if (!getProperty("inputfile.name").isEmpty())
         		inputFileName = getProperty("inputfile.name");
-        		System.out.println("Input file name:["+ inputFileName +"]");
-        	} else {
-         		System.out.println("Property [inputfile.name] has NOT value in configuration file. Exit program.");
+        	else {
+         		System.out.println("Property [inputfile.name] has NOT required value in configuration file. Exit program.");
          		System.exit(0);
         	}
         }
+        
+        System.out.println("Input file name:["+ inputFileName +"]");
         
         if (args.length >= 3)
         	outputFileName = args[2];
         else {
         	System.out.println("Missing optional program attributes: <output_file_name>.");
         	System.out.println("This value will be used from the configuration file.");
-        	if (!getProperty("outputfile.name").isEmpty()){
+        	if (!getProperty("outputfile.name").isEmpty())
         		outputFileName = getProperty("outputfile.name");
-        		System.out.println("Output file name:["+ outputFileName +"]");
-        	} else {
-        		System.out.println("Property [outputfile.name] has NOT value in configuration file. Exit program.");
+        	else {
+        		System.out.println("Property [outputfile.name] has NOT required value in configuration file. Exit program.");
          		System.exit(0);
         	}		
         }
-        	                   
+        
+        System.out.println("Output file name:["+ outputFileName +"]");
+        
         File inputFile = new File(inputFileName);
         if (!inputFile.exists()) {
              System.out.println("Input file [" + inputFileName + "]  not found. Exit programm.");
@@ -131,16 +135,16 @@ public class ConverterInCsv {
         if (!getProperty("outputfile.remove.duplicate").isEmpty())  	
         	if (getProperty("outputfile.remove.duplicate").equals("true"))
         		createOutputFileWithRemoveDuplicate();
-        	else
-        		createOutputFile(inputFileName, outputFileName);	
+        	else {
+        		createOutputFile(inputFileName, outputFileName);
+        		System.out.println("Processed " + count + " lines at " + (System.currentTimeMillis() - worktime) + " ms.");
+        	}	
     	else {
     		System.out.println("Property [outputfile.remove.duplicate] has NOT value in configuration file.");
     		System.out.println("This value will be used as 'false'.");
     		createOutputFile(inputFileName, outputFileName);
+    		System.out.println("Processed " + count + " lines at " + (System.currentTimeMillis() - worktime) + " ms.");
     	}
-        //createOutputFile(inputFileName, outputFileName);
-        //System.out.println("Processed " + count + " lines at " + (System.currentTimeMillis() - worktime) + " ms.");
-        //createExportFile();
     }
     
     private static void loadProperty(String filename) {
@@ -268,17 +272,19 @@ public class ConverterInCsv {
 	
 	private static void createOutputFileWithRemoveDuplicate(){
 		
+		tempOUTputFilename = inputFileName.substring(0,inputFileName.lastIndexOf('.')) + "_out.csv";
 		getHashSetOfDuplicatedContactId();
 		splitIncomingFile();
 		getMapForPairDuplicatedIDLastAttemptTimeStamp();     
 		mergeTempFilesToOneWithNoDuplicates();
-		createOutputFile(TEMP_UNIQUE_ID_FILENAME, outputFileName);
+		createOutputFile(tempOUTputFilename, outputFileName);
+		System.out.println("Exported " + (traceCountRows1 + traceCountRows2) + " rows  at "+ (System.currentTimeMillis() - worktime) + " ms.");
 	}
 
 
 	private static void getHashSetOfDuplicatedContactId () {
+		
 		int ContactID;	
-		int count = 0;
 		HashSet<Integer> tempUniqueIdSet = new HashSet<Integer>();
 
 		inputFileFieldsDelimiter = getProperty("inputfile.fieldsdelimiter");
@@ -290,20 +296,21 @@ public class ConverterInCsv {
             		ContactID = 0;
             		inputFieldsArray = readlineFromFile.split(inputFileFieldsDelimiter);
             		            		
-            		if (isIdFieldContainsOnlyDigits(inputFieldsArray[0]))
-            			ContactID = Integer.valueOf(inputFieldsArray[0]);
+            		if (isIdFieldContainsOnlyDigits(inputFieldsArray[getContactIdIndex()]))
+            			ContactID = Integer.valueOf(inputFieldsArray[getContactIdIndex()]);
             			
             		if (ContactID!=0 && !tempUniqueIdSet.contains(ContactID)) {
             			tempUniqueIdSet.add(ContactID);
             			//System.out.println(" Add unique Id of Contact to HashSet : " + ContactID);
             		} else if (ContactID!=0 && !duplicatedIdHashSet.contains(ContactID)) {
             			duplicatedIdHashSet.add(ContactID);
-            			count++;
+            			traceCountRows2++;
             			//System.out.println("Duplicated ID :" + ContactID);
             		}	
             	}
         	}
-        	System.out.println("Found "+ count + " contacts with multiple call attempt." );
+        	
+        	//System.out.println("Found "+ traceCountRows2 + " contacts with multiple call attempt." );
         } catch (FileNotFoundException except) {
             System.out.println(except.getMessage());
         } catch (IOException except) {
@@ -314,9 +321,9 @@ public class ConverterInCsv {
 	private static void splitIncomingFile() {
 		
 		int ContactID;
-				
+			
 		try (BufferedReader buffer = new BufferedReader(new FileReader(inputFileName));
-	               BufferedWriter bufferOut = new BufferedWriter(new FileWriter(TEMP_UNIQUE_ID_FILENAME));
+	               BufferedWriter bufferOut = new BufferedWriter(new FileWriter(tempOUTputFilename));
 						BufferedWriter bufferOut2 = new BufferedWriter(new FileWriter(TEMP_NON_UNIQUE_ID_FILENAME));) {        	
 	        		        	
 	        	while ((readlineFromFile = buffer.readLine()) != null) {
@@ -324,17 +331,19 @@ public class ConverterInCsv {
 	            		inputFieldsArray = readlineFromFile.split(inputFileFieldsDelimiter);
 	            		ContactID = 0;
 	            		
-	            		if (isIdFieldContainsOnlyDigits(inputFieldsArray[0]))
-	            			ContactID = Integer.valueOf(inputFieldsArray[0]);
+	            		if (isIdFieldContainsOnlyDigits(inputFieldsArray[getContactIdIndex()]))
+	            			ContactID = Integer.valueOf(inputFieldsArray[getContactIdIndex()]);
 	                    
 	            		if (ContactID == 0) 
 	            			bufferOut.write(readlineFromFile + System.getProperty("line.separator"));
 	            		else if (duplicatedIdHashSet.contains(ContactID)) {
 	            			contactIdList.add(ContactID);
-	            			timeStampList.add(inputFieldsArray[15]);            			
+	            			timeStampList.add(inputFieldsArray[getContactAttemptTime()]);            			
 	            			bufferOut2.write(readlineFromFile + System.getProperty("line.separator"));
-	            		} else 
+	            		} else {
 	            			bufferOut.write(readlineFromFile + System.getProperty("line.separator"));
+	            			traceCountRows1++;
+	            		}
 	            	}
 	        	}
 		} catch (FileNotFoundException except) {
@@ -364,7 +373,8 @@ public class ConverterInCsv {
 	
 	private static void mergeTempFilesToOneWithNoDuplicates() {
 		int ContactID;
-		File outfile = new File(TEMP_UNIQUE_ID_FILENAME);
+		
+		File outfile = new File(tempOUTputFilename);
 		
 		try (BufferedReader buffer = new BufferedReader(new FileReader(TEMP_NON_UNIQUE_ID_FILENAME));
 	               BufferedWriter bufferOut = new BufferedWriter(new FileWriter(outfile,true)); ) {
@@ -374,12 +384,12 @@ public class ConverterInCsv {
 	            		inputFieldsArray = readlineFromFile.split(inputFileFieldsDelimiter);
 	            		ContactID = 0;
 	            		
-	            		if (isIdFieldContainsOnlyDigits(inputFieldsArray[0]))
-	            			ContactID = Integer.valueOf(inputFieldsArray[0]);
+	            		if (isIdFieldContainsOnlyDigits(inputFieldsArray[getContactIdIndex()]))
+	            			ContactID = Integer.valueOf(inputFieldsArray[getContactIdIndex()]);
 	            		
 	            		for (Map.Entry<Integer, String> entry : map.entrySet()) {
 	            		    
-	            		    if (ContactID == entry.getKey() && (inputFieldsArray[15]).equals(entry.getValue())) {
+	            		    if (ContactID == entry.getKey() && (inputFieldsArray[getContactAttemptTime()]).equals(entry.getValue())) {
 	            		    	bufferOut.append(readlineFromFile + System.getProperty("line.separator"));
 	            		    	//System.out.println("Append row:" + readlineFromFile);
 	            		    }
@@ -390,7 +400,43 @@ public class ConverterInCsv {
 	            System.out.println(except.getMessage());
 	        } catch (IOException except) {
 	            System.out.println(except.getMessage());
-	        }        
+	        }  
+		
+	}
+	
+	private static int getContactIdIndex(){
+		int index = -1;
+		if (!getProperty("outputfile.field.index.id").isEmpty()) 			
+			if (isIdFieldContainsOnlyDigits(getProperty("outputfile.field.index.id"))) 
+    			index = Integer.valueOf(getProperty("outputfile.field.index.id"));	
+    		else {
+    			System.out.println("Property [outputfile.field.index.id] has BAD value in configuration file. Check this and try again.");
+         		System.exit(0);	
+    			
+			}
+    	else {
+    		System.out.println("Property [outputfile.field.index.id] has NOT required value in configuration file. Check this and try again.");
+     		System.exit(0);		
+    	}
+		return index;
+	}
+	
+	private static int getContactAttemptTime(){
+		
+		int index = -1;
+		if (!getProperty("outputfile.field.index.contact_attempt_time").isEmpty())  			
+			if (isIdFieldContainsOnlyDigits(getProperty("outputfile.field.index.contact_attempt_time")))
+    			index = Integer.valueOf(getProperty("outputfile.field.index.contact_attempt_time"));
+			else {
+    			System.out.println("Property [outputfile.field.index.contact_attempt_time] has BAD value in configuration file. Check this and try again.");
+         		System.exit(0);	
+    			
+			}
+    	else {
+    		System.out.println("Property [outputfile.field.index.contact_attempt_time] has NOT required value in configuration file. Check this and try again.");
+     		System.exit(0);		
+    	}
+		return index;
 	}
 	
 	private static boolean isIdFieldContainsOnlyDigits (String id) {
@@ -419,9 +465,10 @@ public class ConverterInCsv {
 			System.out.println("Property name [" + propName + "] is invalid or missing in configuration file. Check this and try again ..." );
 			System.exit(0);
 		}
-		return prop;	
-		
+		return prop;		
 	}
+	
+	
 	
    
     
