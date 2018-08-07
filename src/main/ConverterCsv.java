@@ -63,7 +63,6 @@ public class ConverterCsv {
     	
     	Log4jXmlFile.checkExistLog4jXmlFile(getClass().getName());
     	getLogger().info("");
-    	getLogger().info("");
     	getLogger().info("Start script ConverterCsv...");
     }
     
@@ -72,6 +71,7 @@ public class ConverterCsv {
         ConverterCsv myConverter = new ConverterCsv();
         myConverter.getProgramAttributes(args);
         myConverter.start();
+        System.out.println("Details of the execution of the script you can see in the log file: logs/ConverterCsvLog.txt");
     }
     
     private void getProgramAttributes(String[] args) {
@@ -162,6 +162,7 @@ public class ConverterCsv {
     		createOutputFile(inputFileName, outputFileName);
     		getLogger().info("Processed " + count + " lines at " + (System.currentTimeMillis() - worktime) + " ms.");
     	}
+        getLogger().info("Stop script ConverterCsv...");
     }
     
     private void loadProperty(String filename) {
@@ -295,7 +296,7 @@ public class ConverterCsv {
 		getMapForPairDuplicatedIDLastAttemptTimeStamp();     
 		mergeTempFilesToOneWithNoDuplicates();
 		createOutputFile(tempOUTputFilename, outputFileName);
-		//getLogger().info("Exported " + (traceCountRows1 + traceCountRows2) + " rows  at "+ (System.currentTimeMillis() - worktime) + " ms.");
+		getLogger().info("Exported " + (traceCountRows1 + traceCountRows2) + " rows  at "+ (System.currentTimeMillis() - worktime) + " ms.");
 	}
 
 
@@ -318,7 +319,7 @@ public class ConverterCsv {
             			
             		if (ContactID!=0 && !tempUniqueIdSet.contains(ContactID)) {
             			tempUniqueIdSet.add(ContactID);
-            			getLogger().debug(" Unique ID : " + ContactID);
+            			//getLogger().debug(" Unique ID : " + ContactID);
             		} else if (ContactID!=0 && !duplicatedIdHashSet.contains(ContactID)) {
             			duplicatedIdHashSet.add(ContactID);
             			traceCountRows2++;
@@ -417,7 +418,9 @@ public class ConverterCsv {
 	        	getLogger().error(except.getMessage());
 	        } catch (IOException except) {
 	        	getLogger().error(except.getMessage());
-	        }  
+	        } 
+		File tempNonUniqueIdFileName = new File (TEMP_NON_UNIQUE_ID_FILENAME);
+		tempNonUniqueIdFileName.delete();
 		
 	}
 	
