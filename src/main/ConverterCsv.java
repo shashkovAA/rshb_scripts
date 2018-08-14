@@ -35,7 +35,8 @@ import objects.Log4jXmlFile;
  */
 public class ConverterCsv {
   
-    private String inputFileName,outputFileName;
+    private String lineSeparator;
+	private String inputFileName,outputFileName;
     private String readlineFromFile = "";
     private long count = 0;
     private long traceCountRows1 = 0;
@@ -118,6 +119,9 @@ public class ConverterCsv {
          		System.exit(0);
         	}		
         }
+    
+        setLineSeparator();
+        
         getLogger().info("Output file name:["+ outputFileName +"]");
 	}
     
@@ -240,7 +244,7 @@ public class ConverterCsv {
                BufferedWriter bufferOut = new BufferedWriter(new FileWriter(convertFileName)); ) {
         	
         	if (getProperty("outputfile.headerstring.insert").equals("true"))
-        		bufferOut.write(headerString + System.getProperty("line.separator"));
+        		bufferOut.write(headerString + lineSeparator);
         	
         	while ((readlineFromFile = buffer.readLine()) != null) {
             	if (!readlineFromFile.isEmpty()) {        
@@ -256,7 +260,7 @@ public class ConverterCsv {
                     	ouputString+= checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[i]))+ oFFD;
                     
                     ouputString+= checkFieldIsExistAndCustom(Integer.valueOf(outputFieldsIndexArray[numFieldsInConfigFile-1])) + 
-                    		System.getProperty("line.separator");
+                    		lineSeparator;
                     
                     if (!(deleteFirstLine && count == 1))
                         bufferOut.write(ouputString);
@@ -353,13 +357,13 @@ public class ConverterCsv {
 	            			ContactID = Integer.valueOf(inputFieldsArray[getContactIdIndex()]);
 	                    
 	            		if (ContactID == 0) 
-	            			bufferOut.write(readlineFromFile + System.getProperty("line.separator"));
+	            			bufferOut.write(readlineFromFile + lineSeparator);
 	            		else if (duplicatedIdHashSet.contains(ContactID)) {
 	            			contactIdList.add(ContactID);
 	            			timeStampList.add(inputFieldsArray[getContactAttemptTime()]);            			
-	            			bufferOut2.write(readlineFromFile + System.getProperty("line.separator"));
+	            			bufferOut2.write(readlineFromFile + lineSeparator);
 	            		} else {
-	            			bufferOut.write(readlineFromFile + System.getProperty("line.separator"));
+	            			bufferOut.write(readlineFromFile + lineSeparator);
 	            			traceCountRows1++;
 	            		}
 	            	}
@@ -408,7 +412,7 @@ public class ConverterCsv {
 	            		for (Map.Entry<Integer, String> entry : map.entrySet()) {
 	            		    
 	            		    if (ContactID == entry.getKey() && (inputFieldsArray[getContactAttemptTime()]).equals(entry.getValue())) {
-	            		    	bufferOut.append(readlineFromFile + System.getProperty("line.separator"));
+	            		    	bufferOut.append(readlineFromFile + lineSeparator);
 	            		    	//getLogger().debug("Append row:" + readlineFromFile);
 	            		    }
 	            		}
@@ -486,6 +490,24 @@ public class ConverterCsv {
 			System.exit(0);
 		}
 		return prop;		
+	}
+	
+	private void setLineSeparator(){
+	
+		if (!getProperty("outputfile.line.separator").isEmpty() 
+			|| getProperty("outputfile.line.separator").equals("\n") 
+			|| getProperty("outputfile.line.separator").equals("\r\n")) {
+			lineSeparator = getProperty("outputfile.line.separator");
+			getLogger().debug("Property [outputfile.line.separator] has value in configuration file ["+ lineSeparator +"]");
+			
+		}	
+    	else {
+    		lineSeparator = System.getProperty("line.separator");
+    		getLogger().error("Property [outputfile.line.separator] has NOT required value or missing. Use system value ["+ lineSeparator +"]");	
+    	}	
+		
+	       
+        
 	}
 	
 	private Logger getLogger() {
